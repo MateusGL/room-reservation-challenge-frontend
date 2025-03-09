@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor U as Usuário
+    participant F as Frontend
+    participant A as Autenticação
+    participant R as Serviço de Reservas
+    participant S as Sala
+    participant DB as Banco de Dados
+
+    U->>+F: Solicita nova reserva
+    F->>+A: Verifica token JWT
+    A-->>-F: Token válido
+    
+    F->>+R: Cria nova reserva
+    R->>+DB: Valida disponibilidade
+    DB-->>-R: Confirma disponibilidade
+    
+    R->>+S: Verifica sala
+    S-->>-R: Sala confirmada
+    
+    R->>+DB: Salva reserva
+    DB-->>-R: Reserva criada
+    
+    R-->>-F: Confirmação
+    F-->>-U: Mostra sucesso
