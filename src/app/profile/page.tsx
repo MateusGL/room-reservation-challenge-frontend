@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-
 export default function ProfilePage() {
   const [userData, setUserData] = useState({
     name: "João Silva",
@@ -50,7 +49,7 @@ export default function ProfilePage() {
                   type="text"
                   value={userData.name}
                   onChange={(e) => setUserData({...userData, name: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -62,7 +61,7 @@ export default function ProfilePage() {
                   type="email"
                   value={userData.email}
                   onChange={(e) => setUserData({...userData, email: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -77,7 +76,7 @@ export default function ProfilePage() {
                   type="text"
                   value={userData.department}
                   onChange={(e) => setUserData({...userData, department: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -89,7 +88,7 @@ export default function ProfilePage() {
                   type="tel"
                   value={userData.phone}
                   onChange={(e) => setUserData({...userData, phone: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   pattern="\([0-9]{2}\) [0-9]{5}-[0-9]{4}"
                 />
               </div>
@@ -102,7 +101,7 @@ export default function ProfilePage() {
                   type="password"
                   value={userData.password}
                   onChange={(e) => setUserData({...userData, password: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Nova senha"
                 />
                 <p className="text-xs text-gray-500 mt-1">

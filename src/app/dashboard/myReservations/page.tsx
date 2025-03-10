@@ -11,8 +11,14 @@ interface Reservation {
 }
 
 export default function MyReservations() {
-  const [filter, setFilter] = useState<"all" | "upcoming" | "past" | "canceled">("all");
-  
+  const [filter, setFilter] = useState<
+    "all" | "upcoming" | "past" | "canceled"
+  >("all");
+  const [editingReservation, setEditingReservation] =
+    useState<Reservation | null>(null);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
   // Dados simulados
   const [reservations, setReservations] = useState<Reservation[]>([
     {
@@ -20,54 +26,171 @@ export default function MyReservations() {
       room: "Sala de Reunião A",
       date: "2024-03-20",
       time: "14:00 - 15:30",
-      status: "confirmed"
+      status: "confirmed",
     },
     {
       id: "2",
       room: "Auditório Principal",
       date: "2024-03-22",
       time: "10:00 - 11:00",
-      status: "pending"
+      status: "pending",
     },
     {
       id: "3",
       room: "Sala de Treinamento B",
       date: "2024-03-18",
       time: "09:00 - 10:30",
-      status: "completed"
+      status: "completed",
     },
     {
       id: "4",
       room: "Sala de Conferência C",
       date: "2024-03-25",
       time: "16:00 - 17:00",
-      status: "canceled"
-    }
+      status: "canceled",
+    },
   ]);
 
-  const filteredReservations = reservations.filter(res => {
+  const filteredReservations = reservations.filter((res) => {
     if (filter === "all") return true;
-    if (filter === "upcoming") return ["confirmed", "pending"].includes(res.status);
+    if (filter === "upcoming")
+      return ["confirmed", "pending"].includes(res.status);
     if (filter === "past") return res.status === "completed";
     return res.status === filter;
   });
 
   const cancelReservation = (id: string) => {
-    setReservations(reservations.map(res => 
-      res.id === id ? {...res, status: "canceled"} : res
-    ));
+    setReservations(
+      reservations.map((res) =>
+        res.id === id ? { ...res, status: "canceled" } : res
+      )
+    );
+  };
+
+  const handleEditClick = (reservation: Reservation) => {
+    const [start, end] = reservation.time.split(" - ");
+    setEditingReservation(reservation);
+    setStartTime(start);
+    setEndTime(end);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingReservation) {
+      // Validação básica
+      if (startTime >= endTime) {
+        alert("O horário de término deve ser após o início");
+        return;
+      }
+
+      const updatedReservation = {
+        ...editingReservation,
+        room: editingReservation.room,
+        date: editingReservation.date,
+        time: `${startTime} - ${endTime}`,
+      };
+
+      setReservations(
+        reservations.map((res) =>
+          res.id === updatedReservation.id ? updatedReservation : res
+        )
+      );
+
+      setEditingReservation(null);
+      setStartTime("");
+      setEndTime("");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
-      
+      {/* Modal de Edição */}
+      {editingReservation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-black text-xl font-bold mb-4">Editar Reserva</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-semibold mb-2">
+                  Sala
+                </label>
+                <input
+                  type="text"
+                  value={editingReservation.room}
+                  onChange={(e) =>
+                    setEditingReservation({
+                      ...editingReservation,
+                      room: e.target.value,
+                    })
+                  }
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-semibold mb-2">
+                  Data
+                </label>
+                <input
+                  type="date"
+                  value={editingReservation.date}
+                  onChange={(e) =>
+                    setEditingReservation({
+                      ...editingReservation,
+                      date: e.target.value,
+                    })
+                  }
+                  className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-semibold mb-2">
+                  Horário
+                </label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="mx-1">-</span>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingReservation(null)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
               Minhas Reservas
             </h1>
-            
+
             <div className="flex gap-4">
               <select
                 value={filter}
@@ -79,9 +202,9 @@ export default function MyReservations() {
                 <option value="past">Passadas</option>
                 <option value="canceled">Canceladas</option>
               </select>
-              
+
               <button
-                onClick={() => window.location.href = "/dashboard"}
+                onClick={() => (window.location.href = "/dashboard")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Nova Reserva
@@ -111,31 +234,36 @@ export default function MyReservations() {
                   <div className="md:col-span-4 font-medium">
                     {reservation.room}
                   </div>
-                  
+
                   <div className="md:col-span-2">
                     {new Date(reservation.date).toLocaleDateString("pt-BR")}
                   </div>
-                  
-                  <div className="md:col-span-3">
-                    {reservation.time}
-                  </div>
-                  
+
+                  <div className="md:col-span-3">{reservation.time}</div>
+
                   <div className="md:col-span-2">
-                    <span className={`px-2 py-1 rounded-full text-sm ${
-                      reservation.status === "confirmed" ? "bg-green-100 text-green-800" :
-                      reservation.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                      reservation.status === "canceled" ? "bg-red-100 text-red-800" :
-                      "bg-gray-100 text-gray-800"
-                    }`}>
-                      {{
-                        confirmed: "Confirmada",
-                        pending: "Pendente",
-                        canceled: "Cancelada",
-                        completed: "Concluída"
-                      }[reservation.status]}
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        reservation.status === "confirmed"
+                          ? "bg-green-100 text-green-800"
+                          : reservation.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : reservation.status === "canceled"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {
+                        {
+                          confirmed: "Confirmada",
+                          pending: "Pendente",
+                          canceled: "Cancelada",
+                          completed: "Concluída",
+                        }[reservation.status]
+                      }
                     </span>
                   </div>
-                  
+
                   <div className="md:col-span-1 flex gap-2">
                     {["confirmed", "pending"].includes(reservation.status) && (
                       <>
@@ -147,6 +275,7 @@ export default function MyReservations() {
                           ✕
                         </button>
                         <button
+                          onClick={() => handleEditClick(reservation)}
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
                         >
