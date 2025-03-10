@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+
+## Notas
+usando o app/ boa pratica recomendada para versao atual do nextjs
+
 ## Arquitetura
 
 ![Diagrama de sequencia do Sistema](./public/diagrams/mermaid-diagram-2025-03-09-150620.png)
