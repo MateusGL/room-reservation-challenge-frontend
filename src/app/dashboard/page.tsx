@@ -38,8 +38,7 @@ export default function DashboardPage() {
       ];
       setRooms(data);
 
-      const result = await listRooms();
-      console.log(result.data);
+      const result = await listRooms();      
       if (result.error) {
         setError(result.error);
         if (result.status === 401) {

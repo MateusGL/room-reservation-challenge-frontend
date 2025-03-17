@@ -7,6 +7,7 @@ import { EditReservationsList } from "@/components/EditReservationList";
 import { listMyReservations } from "@/app/actions/listMyReservations.action";
 import { useRouter } from "next/navigation";
 import { ErrorPage } from "@/components/errorPage";
+import { deleteReservation } from "@/app/actions/deleteReservation.action";
 
 export default function MyReservations() {
   const router = useRouter();
@@ -16,30 +17,8 @@ export default function MyReservations() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  const [reservations, setReservations] = useState<Reservation[]>([
-    // {
-    //   id: "1",
-    //   startTime: new Date("2024-03-20T14:00"),
-    //   endTime: new Date("2024-03-20T15:30"),
-    //   room: { name: "Sala de Reunião A" },
-    //   user: { name: "João Silva" },
-    // },
-    // {
-    //   id: "2",
-    //   startTime: new Date("2025-03-22T10:00"),
-    //   endTime: new Date("2025-03-22T11:00"),
-    //   room: { name: "Auditório Principal" },
-    //   user: { name: "Maria Souza" },
-    // },
-    // {
-    //   id: "3",
-    //   startTime: new Date("2024-03-18T09:00"),
-    //   endTime: new Date("2024-03-18T10:30"),
-    //   room: { name: "Sala de Treinamento B" },
-    //   user: { name: "Carlos Oliveira" },
-    // },
-  ]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -64,8 +43,16 @@ export default function MyReservations() {
     return res.endTime <= now;
   });
 
-  const cancelReservation = (id: string) => {
+  const cancelReservation = async (id: string) => {
     setReservations(reservations.filter((res) => res.id !== id));
+
+    const result = await deleteReservation(id);
+    if (result.error) {
+      setError(result.error);
+      if (result.status === 401) {
+        router.push("/login");
+      }
+    }
   };
 
   const handleEditClick = (reservation: Reservation) => {
