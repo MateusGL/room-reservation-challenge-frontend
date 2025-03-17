@@ -1,11 +1,24 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Room } from "@/types";
-import DatePicker from "react-datepicker";
-import { addDays } from "date-fns";
+import { ErrorPage } from "@/components/errorPage";
+import { listRooms } from "@/app/actions/listRooms.action";
+import { createReservation } from "@/app/actions/createReservation.action";
+
+function parseTimeToDate(baseDate: Date, timeString: string): Date {
+  const [hours, minutes] = timeString.split(":").map(Number);
+  return new Date(
+    baseDate.getFullYear(),
+    baseDate.getMonth(),
+    baseDate.getDate(),
+    hours,
+    minutes
+  );
+}
 
 export default function RoomPage() {
+  const router = useRouter();
   const params = useParams();
   const [room, setRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -14,8 +27,9 @@ export default function RoomPage() {
   const [reservationStatus, setReservationStatus] = useState<string | null>(
     null
   );
+  const [error, setError] = useState<string | null>(null);
 
-  const availableTimes = [
+  const suggestionTimes = [
     { start: "08:00", end: "09:00" },
     { start: "09:00", end: "10:00" },
     { start: "10:00", end: "11:00" },
@@ -23,41 +37,37 @@ export default function RoomPage() {
     { start: "16:00", end: "17:00" },
     { start: "17:00", end: "18:00" },
   ];
-  
 
   useEffect(() => {
-    const fetchRoom = () => {
-      const rooms: Room[] = [
-        {
-          id: "1",
-          name: "Sala 1",
-          capacity: 10,
-          location: "Andar 1",
-          equipment: ["Projetor", "Tela", "Ar-condicionado"],
-        },
-        {
-          id: "2",
-          name: "Sala 2",
-          capacity: 20,
-          location: "Andar 2",
-          equipment: ["Computador", "Quadro branco"],
-        },
-        {
-          id: "3",
-          name: "Sala 3",
-          capacity: 15,
-          location: "Andar 3",
-          equipment: ["Mesa de conferência", "Cadeiras"],
-        },
-      ];
-      const selectedRoom = rooms.find((r) => r.id === params.id);
-      if (selectedRoom) {
-        setRoom(selectedRoom);
-      } else {
-        setReservationStatus("Sala não encontrada.");
+    const loadRoom = async () => {
+      try {
+        const cachedRoom = sessionStorage.getItem("selectedRoom");
+
+        if (cachedRoom) {
+          setRoom(JSON.parse(cachedRoom));
+          sessionStorage.removeItem("selectedRoom");
+          return;
+        }
+
+        const result = await listRooms();
+
+        if (result.error) {
+          setError(result.error);
+        } else {
+          const foundRoom = result.data?.find((r: Room) => r.id === params.id);
+
+          if (foundRoom) {
+            setRoom(foundRoom);
+          } else {
+            setError("Sala não encontrada");
+          }
+        }
+      } catch (err: unknown) {
+        setError(`Erro ao carregar dados da sala ${err}`);
       }
     };
-    fetchRoom();
+
+    loadRoom();
   }, [params.id]);
 
   const validateTimeRange = (start: string, end: string): boolean => {
@@ -67,7 +77,7 @@ export default function RoomPage() {
     return startHour < endHour && endHour - startHour >= 1;
   };
 
-  const handleReserve = () => {
+  const handleReserve = async () => {
     if (!selectedDate) {
       setReservationStatus("Por favor, selecione uma data.");
       return;
@@ -80,6 +90,22 @@ export default function RoomPage() {
       setReservationStatus("O horário deve ter pelo menos 1 hora de duração.");
       return;
     }
+    console.log(selectedDate, startTime, endTime);
+    const reservationData = {
+      startTime: parseTimeToDate(new Date(selectedDate), startTime),
+      endTime: parseTimeToDate(new Date(selectedDate), endTime),
+      roomId: `${params.id}`,
+    };
+
+    const result = await createReservation(reservationData);
+
+    if (result.error) {
+      setError(result.error);
+      if (result.status === 401) {
+        router.push("/login");
+      }
+    }
+
     setReservationStatus(
       `Sala ${
         room?.name
@@ -93,6 +119,10 @@ export default function RoomPage() {
         <p className="text-gray-600">Carregando dados da sala...</p>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorPage error={error} />;
   }
 
   return (
@@ -110,15 +140,8 @@ export default function RoomPage() {
             <p className="text-gray-600 mt-2">
               Capacidade: {room?.capacity} pessoas
             </p>
-            <p className="text-gray-600">Localização: {room?.location}</p>
-            <div className="mt-4">
-              <p className="font-semibold">Equipamento:</p>
-              <ul className="list-disc pl-5 text-gray-600">
-                {room?.equipment.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
+
+            <div className="mt-4"></div>
             <div className="mt-6">
               <button
                 onClick={handleReserve}
@@ -141,64 +164,70 @@ export default function RoomPage() {
                 Selecione a data e horário:
               </label>
 
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Calendário */}
-                <div className="lg:w-2/4">
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(date) => setSelectedDate(date)}
-                    minDate={addDays(new Date(), 1)}
-                    inline
-                    calendarClassName="!w"
-                    dateFormat="Pp"
-                  />
-                </div>
-
+              <div className="w-full flex flex-col lg:flex-row gap-6">
                 {/* Seção de Horários */}
-                <div className="lg:w-2/4 flex flex-col gap-4">
-                  {/* Inputs de Horário */}
-                  <div>
-                    <label className="block text-gray-700 mb-2 text-sm">
-                      Horário de início:
+                <div className="flex-1 bg-white p-6 rounded-lg shadow-md flex justify-center items-center">
+                  <div className="sticky top-6 w-full max-w-lg">
+                    <label className="block text-gray-700 mb-4 text-lg font-semibold text-center">
+                      Selecione a data e horário:
                     </label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-gray-700 mb-2 text-sm">
-                      Horário de fim:
-                    </label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                    <div className="w-full flex flex-col items-center gap-6">
+                      {/* Seção de Horários */}
+                      <div className="flex flex-col gap-4 w-full items-center">
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          className="text-black w-full max-w-xs px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                        />
 
-                  {/* Lista de Horários Disponíveis */}
-                  <div className="mt-4">
-                    <h3 className="text-sm font-semibold mb-2 text-gray-700">
-                      Horários disponíveis:
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                      {availableTimes.map((time, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setStartTime(time.start);
-                            setEndTime(time.end);
-                          }}
-                          className="text-sm p-2 border rounded hover:bg-blue-50 transition-colors"
-                        >
-                          {time.start} - {time.end}
-                        </button>
-                      ))}
+                        {/* Inputs de Horário */}
+                        <div className="w-full max-w-xs">
+                          <label className="block text-gray-700 mb-2 text-sm text-center">
+                            Horário de início:
+                          </label>
+                          <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                          />
+                        </div>
+
+                        <div className="w-full max-w-xs">
+                          <label className="block text-gray-700 mb-2 text-sm text-center">
+                            Horário de fim:
+                          </label>
+                          <input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                          />
+                        </div>
+
+                        {/* Lista de Horários Disponíveis */}
+                        <div className="mt-4 w-full max-w-xs">
+                          <h3 className="text-sm font-semibold mb-2 text-gray-700 text-center">
+                            Sugestão de Horários:
+                          </h3>
+                          <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto text-black">
+                            {suggestionTimes.map((time, index) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  setStartTime(time.start);
+                                  setEndTime(time.end);
+                                }}
+                                className="text-sm p-2 border rounded hover:bg-blue-50 transition-colors w-full text-center"
+                              >
+                                {time.start} - {time.end}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
