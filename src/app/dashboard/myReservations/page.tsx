@@ -8,6 +8,7 @@ import { listMyReservations } from "@/app/actions/listMyReservations.action";
 import { useRouter } from "next/navigation";
 import { ErrorPage } from "@/components/errorPage";
 import { deleteReservation } from "@/app/actions/deleteReservation.action";
+import { editReservation } from "@/app/actions/editReservation.action";
 
 export default function MyReservations() {
   const router = useRouter();
@@ -63,11 +64,11 @@ export default function MyReservations() {
     };
 
     setEditingReservation(reservation);
-    setStartTime(formatTime(reservation.startTime));
-    setEndTime(formatTime(reservation.endTime));
+    setStartTime(formatTime(new Date(reservation.startTime)));
+    setEndTime(formatTime(new Date(reservation.endTime)));
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingReservation) {
       if (startTime >= endTime) {
@@ -90,6 +91,15 @@ export default function MyReservations() {
         endTime: newEndTime,
       };
 
+      const result = await editReservation(editingReservation.id, {
+        startTime: newStartTime,
+        endTime: newEndTime,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
       setReservations(
         reservations.map((res) =>
           res.id === updatedReservation.id ? updatedReservation : res
@@ -97,8 +107,6 @@ export default function MyReservations() {
       );
 
       setEditingReservation(null);
-      setStartTime("");
-      setEndTime("");
     }
   };
 
@@ -117,9 +125,6 @@ export default function MyReservations() {
           endTime={endTime}
           onStartTimeChange={setStartTime}
           onEndTimeChange={setEndTime}
-          onReservationChange={(updatedRes) =>
-            setEditingReservation(updatedRes)
-          }
         />
       )}
 

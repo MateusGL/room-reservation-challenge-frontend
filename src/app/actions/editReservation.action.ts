@@ -11,7 +11,7 @@ export type ApiResponse = {
 
 export async function editReservation(
   id: string,
-  reservation: Partial<Reservation>
+  reservation: Pick<Reservation, 'endTime' | 'startTime'>
 ): Promise<ApiResponse> {
   try {
     const cookieStore = await cookies();
@@ -24,7 +24,7 @@ export async function editReservation(
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/reservations/${id}`,
       {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",

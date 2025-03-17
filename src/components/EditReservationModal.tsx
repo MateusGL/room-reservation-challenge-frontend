@@ -8,7 +8,6 @@ interface EditReservationModalProps {
   endTime: string;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
-  onReservationChange: (reservation: Reservation) => void;
 }
 
 export const EditReservationModal: React.FC<EditReservationModalProps> = ({
@@ -19,7 +18,6 @@ export const EditReservationModal: React.FC<EditReservationModalProps> = ({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
-  onReservationChange,
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -29,16 +27,11 @@ export const EditReservationModal: React.FC<EditReservationModalProps> = ({
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-semibold mb-2">
               Sala
+              {/* TODO: DropList */}
             </label>
             <input
               type="text"
               value={reservation.room.name}
-              onChange={(e) =>
-                onReservationChange({
-                  ...reservation,
-                  room: { ...reservation.room, name: e.target.value },
-                })
-              }
               className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -48,7 +41,7 @@ export const EditReservationModal: React.FC<EditReservationModalProps> = ({
               Horário de Início
             </label>
             <input
-              type="datetime-local"
+              type="time"
               value={startTime}
               onChange={(e) => onStartTimeChange(e.target.value)}
               className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -60,7 +53,7 @@ export const EditReservationModal: React.FC<EditReservationModalProps> = ({
               Horário de Término
             </label>
             <input
-              type="datetime-local"
+              type="time"
               value={endTime}
               onChange={(e) => onEndTimeChange(e.target.value)}
               className="text-black w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
